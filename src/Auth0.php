@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Auth0\Laravel;
 
+use Auth0\Laravel\Storage\Auth0RedisSessionStorage;
+use Auth0\SDK\Store\Psr6Store;
+use Symfony\Component\Cache\Adapter\Psr16Adapter;
+
 /**
  * Service that provides access to the Auth0 SDK.
  */
@@ -54,7 +58,19 @@ final class Auth0 implements \Auth0\Laravel\Contract\Auth0
     public function getConfiguration(): \Auth0\SDK\Configuration\SdkConfiguration
     {
         if ($this->configuration === null) {
-            $this->configuration = new \Auth0\SDK\Configuration\SdkConfiguration(app()->make('config')->get('auth0'));
+
+            $config = app()->make('config')->get('auth0');
+
+            if (isset($config['useRedisForSessionStorage']) && $config['useRedisForSessionStorage']) {
+
+                $auth0PublicStore = new Auth0RedisSessionStorage();
+                $auth0PrivateStore = new Psr16Adapter(app('cache.store'));
+                $config['sessionStorage'] = new Psr6Store($auth0PublicStore, $auth0PrivateStore, 'auth0-session-storage');
+
+            }
+
+            $this->configuration = new \Auth0\SDK\Configuration\SdkConfiguration($config);
+
         }
 
         return $this->configuration;
