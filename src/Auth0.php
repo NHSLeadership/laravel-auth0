@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Auth0\Laravel;
 
-use Auth0\Laravel\Storage\Auth0RedisSessionStorage;
+use Auth0\Laravel\Store\LaravelSessionStore;
 use Auth0\SDK\Store\Psr6Store;
 use Symfony\Component\Cache\Adapter\Psr16Adapter;
 
@@ -61,9 +61,9 @@ final class Auth0 implements \Auth0\Laravel\Contract\Auth0
 
             $config = app()->make('config')->get('auth0');
 
-            if (isset($config['useRedisForSessionStorage']) && $config['useRedisForSessionStorage']) {
+            if (isset($config['useLaravelSessionStorage']) && $config['useLaravelSessionStorage']) {
 
-                $auth0PublicStore = new Auth0RedisSessionStorage();
+                $auth0PublicStore = new LaravelSessionStore();
                 $auth0PrivateStore = new Psr16Adapter(app('cache.store'));
                 $config['sessionStorage'] = new Psr6Store($auth0PublicStore, $auth0PrivateStore, 'auth0-session-storage');
 

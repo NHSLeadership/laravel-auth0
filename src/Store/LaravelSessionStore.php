@@ -2,17 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Auth0\Laravel\Storage;
+namespace Auth0\Laravel\Store;
 
 use Auth0\SDK\Contract\StoreInterface;
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Str;
 
-class Auth0RedisSessionStorage implements StoreInterface
+class LaravelSessionStore implements StoreInterface
 {
     private string $prefix;
 
-    public function __construct(string $prefix = 'auth0-redis-session-storage')
+    public function __construct(string $prefix = 'auth0-laravel-session-storage')
     {
         $this->prefix = Str::kebab(Str::lower($prefix));
     }
@@ -25,7 +24,7 @@ class Auth0RedisSessionStorage implements StoreInterface
      */
     public function set(string $key, $value): void
     {
-        Redis::set($this->getKeyName($key), $value);
+        session()->put($this->getKeyName($key), $value);
     }
 
     /**
@@ -38,7 +37,7 @@ class Auth0RedisSessionStorage implements StoreInterface
      */
     public function get(string $key, $default = null)
     {
-        if ($value = Redis::get($this->getKeyName($key))) return $value;
+        if (session()->has($this->getKeyName($key))) return session()->get($this->getKeyName($key));
 
         return $default;
     }
@@ -50,7 +49,7 @@ class Auth0RedisSessionStorage implements StoreInterface
      */
     public function delete(string $key): void
     {
-        Redis::delete($this->getKeyName($key));
+        session()->forget($this->getKeyName($key));
     }
 
     /**
@@ -58,11 +57,7 @@ class Auth0RedisSessionStorage implements StoreInterface
      */
     public function purge(): void
     {
-        $keys = Redis::keys("$this->prefix:*");
-
-        foreach ($keys as $key) {
-            Redis::delete($key);
-        }
+        session()->flush();
     }
 
     /**
